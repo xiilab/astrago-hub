@@ -90,7 +90,7 @@ Yolov5 모델 학습을 위해서는 가공된 학습 데이터가 필요합니�
 
 ex) park_person.jpg
 
-![Untitled](YOLOv5%20496265b04d0d4d88a137b07484165368/Untitled.png)
+![park_person](../images/park_person.png)
 
 2. 주석(Annotation) 파일
 Object detection 모델을 학습할 예정이므로 bounding box형태로 가공하며 가공된 결과는 txt 파일로 아래와 같이 저장합니다.
