@@ -111,8 +111,7 @@ ex) park_person.txt
 | 파라미터 | int/float/str | 설명 | 예시 |
 | --- | --- | --- | --- |
 | data_dir | str | 데이터셋 경로  | /DATA/yolo_dataset/train, val, test |
-| image_size | int | 입력 이미지 사이즈, 입력한 수치대로 resize
-select: 320 512 640 768 960 1280 | 640 |
+| image_size | int | 입력 이미지 사이즈, 입력한 수치대로 resize | select: 320 512 640 768 960 1280 | 640 |
 | epochs | int | 전체 데이터셋이 네트워크를 통해 전달되고 학습되는 횟수 | 100 |
 | batch_size | int | select: 1, 2, 4, 8, 16, 32 | 8 |
 | learning_rate | float | 모델의 가중치를 업데이트하는 데 사용되는 스텝의 크기 |  0.01 or 0.001 … |
