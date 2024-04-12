@@ -19,12 +19,10 @@ from unet import UNet
 from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.dice_score import dice_loss
 
-dir_img = Path('./data/imgs/')
-dir_mask = Path('./data/masks/')
-dir_checkpoint = Path('./checkpoints/')
-
 
 def train_model(
+        data_dir,
+        dir_checkpoint,
         model,
         device,
         epochs: int = 5,
@@ -39,6 +37,9 @@ def train_model(
         gradient_clipping: float = 1.0,
 ):
     # 1. Create dataset
+    parent_dir = os.path.abspath(data_dir)
+    dir_img = os.path.join(parent_dir, 'imgs')
+    dir_mask = os.path.join(parent_dir, 'masks')
     try:
         dataset = CarvanaDataset(dir_img, dir_mask, img_scale)
     except (AssertionError, RuntimeError, IndexError):
@@ -169,6 +170,8 @@ def train_model(
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
+    parser.add_argument('--data_dir', type=str, default='data/', help='data directory path')
+    parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='checkpoint path')
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-5,
@@ -211,6 +214,8 @@ if __name__ == '__main__':
     model.to(device=device)
     try:
         train_model(
+            data_dir=args.data_dir,
+            dir_checkpoint=args.checkpoints,
             model=model,
             epochs=args.epochs,
             batch_size=args.batch_size,
