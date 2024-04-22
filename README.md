@@ -2,7 +2,7 @@
 
 ## 소개
 
-![Untitled](README%20md%203bf15a4a9c1f46b4bd1ec121482dbe9c/Untitled.png)
+![Untitled](https://github.com/xiilab/astrago-hub/assets/161695779/8339b896-be3e-4d40-82f5-1ca3731e2474)
 
 UNet은 이미지 세그멘테이션(이미지 내의 픽셀 수준에서 객체 경계를 식별하는 작업)을 위한 딥러닝 아키텍처 중 하나입니다. UNet은 2015년에 발표된 "U-Net: Convolutional Networks for Biomedical Image Segmentation" 논문에서 처음으로 제안되었습니다.
 
@@ -14,7 +14,7 @@ UNet은 의료 이미지 분야에서 주로 사용되어 왔으며, 세포 이�
 
 ## 폴더 구조 및 설명
 
-![Untitled](README%20md%203bf15a4a9c1f46b4bd1ec121482dbe9c/Untitled%201.png)
+![Untitled 1](https://github.com/xiilab/astrago-hub/assets/161695779/be8a39a2-5c5f-4fc0-9463-16b7f5151af0)
 
 - **data**
     - 데이터 폴더에는 'imgs'와 'masks'라는 두 개의 하위 폴더가 있습니다. 이들 폴더는 각각 원본 이미지와 해당하는 마스크 이미지를 저장합니다.
