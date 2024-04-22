@@ -40,7 +40,7 @@ ResNeXT는 다양한 컴퓨터 비전 작업에 사용되며, 특히 이미지 �
     
     ```bash
     python train.py \
-    		--data_dir ./data \
+    	--data_dir ./data \
         --epoch 100 \
         --batch 16 \
         --imgsz 320 \
