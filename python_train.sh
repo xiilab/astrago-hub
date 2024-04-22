@@ -1,1 +1,1 @@
-python train.py --batch 16  --epoch 100 --imgsz 1280 --lr 0.001 --pretrained True
+python train.py --batch 16  --epoch 100 --imgsz 320 --lr 0.001 --pretrained True

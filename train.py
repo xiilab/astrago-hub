@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs=10):
+def train_model(model, criterion, optimizer, scheduler, save_path, num_epochs=10):
     since = time.time()
 
     # Create a temporary directory to save training checkpoints
@@ -90,7 +90,25 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=10):
 
         # load best model weights
         model.load_state_dict(torch.load(best_model_params_path))
+        
+        save_path = make_train_result_folder(save_path)
+        save_path = os.path.join(save_path, 'best_model.pt')
+        torch.save(model, save_path)
     return model
+
+
+def make_train_result_folder(path):
+    path = path.rstrip("/")
+    folder_name = os.path.basename(path)
+    folder_path = os.path.dirname(path)
+    new_folder_path = path
+    i = 1
+    while os.path.exists(new_folder_path): 
+        new_folder_name = f"{folder_name}_{i}"
+        new_folder_path = os.path.join(folder_path, new_folder_name)
+        i += 1
+    os.makedirs(new_folder_path)
+    return new_folder_path
 
 
 def get_args():
@@ -101,6 +119,7 @@ def get_args():
     parser.add_argument('--imgsz', type=int, default=224, help='Input Image Size')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--pretrained', type=bool, default=True, help='pre-trained select')
+    parser.add_argument('--save', type=str, default='./train_results/run', help='Directory to save train results like model .pth')
     return parser.parse_args()
 
 
@@ -113,6 +132,7 @@ if __name__=='__main__':
     imgsz = args.imgsz
     lr = args.lr  
     pretrained_check = args.pretrained 
+    save_path = args.save
     
     
     data_transforms = {
@@ -139,7 +159,7 @@ if __name__=='__main__':
     
     class_names = image_datasets['train'].classes
 
-    device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     model_ft = models.resnext101_64x4d(pretrained=pretrained_check)
     
@@ -164,4 +184,4 @@ if __name__=='__main__':
     Astrago.get_image_size(args.imgsz)
     Astrago.get_batch_size(args.batch)
     Astrago.get_data_info(len(image_datasets['train']), len(image_datasets['val']))
-    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=epoch)
+    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, save_path, num_epochs=epoch)
