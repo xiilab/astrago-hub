@@ -4,7 +4,9 @@
 import datetime
 import os
 import time
+import warnings
 from loguru import logger
+warnings.filterwarnings('ignore')
 
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -12,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from yolox.data import DataPrefetcher
 from yolox.exp import Exp
+from yolox.utils.astrago import Astrago
 from yolox.utils import (
     MeterBuffer,
     ModelEMA,
@@ -41,6 +44,7 @@ class Trainer:
         self.args = args
 
         # training related attr
+        exp.max_epoch = args.epoch
         self.max_epoch = exp.max_epoch
         self.amp_training = args.fp16
         self.scaler = torch.cuda.amp.GradScaler(enabled=args.fp16)
@@ -52,6 +56,8 @@ class Trainer:
         self.save_history_ckpt = exp.save_history_ckpt
 
         # data/dataloader related attr
+        exp.data_dir = args.data_dir
+        exp.input_size = args.imgsz
         self.data_type = torch.float16 if args.fp16 else torch.float32
         self.input_size = exp.input_size
         self.best_ap = 0
@@ -80,7 +86,13 @@ class Trainer:
             self.after_train()
 
     def train_in_epoch(self):
-        for self.epoch in range(self.start_epoch, self.max_epoch):
+        Astrago.get_gpu_info()
+        Astrago.get_model_name(self.args.ckpt)
+        Astrago.get_model_params(self.model)
+        Astrago.get_data_info(self.args.data_dir)
+        Astrago.get_image_size(self.input_size)
+        Astrago.get_batch_size(self.args.batch_size)
+        for self.epoch in Astrago(range(self.start_epoch, self.max_epoch)):
             self.before_epoch()
             self.train_in_iter()
             self.after_epoch()
@@ -93,14 +105,15 @@ class Trainer:
 
     def train_one_iter(self):
         iter_start_time = time.time()
-
+        
         inps, targets = self.prefetcher.next()
         inps = inps.to(self.data_type)
         targets = targets.to(self.data_type)
         targets.requires_grad = False
         inps, targets = self.exp.preprocess(inps, targets, self.input_size)
         data_end_time = time.time()
-
+        
+        start_time = time.time()
         with torch.cuda.amp.autocast(enabled=self.amp_training):
             outputs = self.model(inps, targets)
 
@@ -113,7 +126,8 @@ class Trainer:
 
         if self.use_model_ema:
             self.ema_model.update(self.model)
-
+        Astrago.get_elapsed_train_time(start_time)
+        
         lr = self.lr_scheduler.update_lr(self.progress_in_iter + 1)
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
@@ -220,6 +234,7 @@ class Trainer:
         if (self.epoch + 1) % self.exp.eval_interval == 0:
             all_reduce_norm(self.model)
             self.evaluate_and_save_model()
+        pass
 
     def before_iter(self):
         pass
@@ -260,7 +275,7 @@ class Trainer:
                     loss_str,
                     self.meter["lr"].latest,
                 )
-                + (", size: {:d}, {}".format(self.input_size[0], eta_str))
+                + (", size: {:d}, {}".format(self.input_size, eta_str))
             )
 
             if self.rank == 0:
@@ -280,10 +295,10 @@ class Trainer:
             self.meter.clear_meters()
 
         # random resizing
-        if (self.progress_in_iter + 1) % 10 == 0:
-            self.input_size = self.exp.random_resize(
-                self.train_loader, self.epoch, self.rank, self.is_distributed
-            )
+        # if (self.progress_in_iter + 1) % 10 == 0:
+        #     self.input_size = self.exp.random_resize(
+        #         self.train_loader, self.epoch, self.rank, self.is_distributed
+        #     )
 
     @property
     def progress_in_iter(self):
@@ -332,11 +347,13 @@ class Trainer:
             if is_parallel(evalmodel):
                 evalmodel = evalmodel.module
 
+        start_time = time.time()
         with adjust_status(evalmodel, training=False):
             (ap50_95, ap50, summary), predictions = self.exp.eval(
                 evalmodel, self.evaluator, self.is_distributed, return_outputs=True
             )
-
+        Astrago.get_elapsed_val_time(start_time)
+        
         update_best_ckpt = ap50_95 > self.best_ap
         self.best_ap = max(self.best_ap, ap50_95)
 

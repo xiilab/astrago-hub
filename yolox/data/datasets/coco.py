@@ -39,8 +39,8 @@ class COCODataset(CacheDataset):
     def __init__(
         self,
         data_dir=None,
-        json_file="instances_train2017.json",
-        name="train2017",
+        json_file="train.json",
+        name="train",
         img_size=(416, 416),
         preproc=None,
         cache=False,
@@ -112,7 +112,7 @@ class COCODataset(CacheDataset):
             cls = self.class_ids.index(obj["category_id"])
             res[ix, 0:4] = obj["clean_bbox"]
             res[ix, 4] = cls
-
+        
         r = min(self.img_size[0] / height, self.img_size[1] / width)
         res[:, :4] *= r
 

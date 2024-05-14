@@ -40,11 +40,11 @@ class Exp(BaseExp):
         # dir of dataset images, if data_dir is None, this project will use `datasets` dir
         self.data_dir = None
         # name of annotation file for training
-        self.train_ann = "instances_train2017.json"
+        self.train_ann = "train.json"
         # name of annotation file for evaluation
-        self.val_ann = "instances_val2017.json"
+        self.val_ann = "val.json"
         # name of annotation file for testing
-        self.test_ann = "instances_test2017.json"
+        self.test_ann = "test.json"
 
         # --------------- transform config ----------------- #
         # prob of applying mosaic aug
@@ -92,7 +92,7 @@ class Exp(BaseExp):
         self.print_interval = 10
         # eval period in epoch, for example,
         # if set to 1, model will be evaluate after every epoch.
-        self.eval_interval = 10
+        self.eval_interval = 1
         # save history checkpoint or not.
         # If set to False, yolox will only save latest and best ckpt.
         self.save_history_ckpt = True
@@ -142,7 +142,7 @@ class Exp(BaseExp):
         return COCODataset(
             data_dir=self.data_dir,
             json_file=self.train_ann,
-            img_size=self.input_size,
+            img_size=(self.input_size, self.input_size),
             preproc=TrainTransform(
                 max_labels=50,
                 flip_prob=self.flip_prob,
@@ -183,7 +183,7 @@ class Exp(BaseExp):
         self.dataset = MosaicDetection(
             dataset=self.dataset,
             mosaic=not no_aug,
-            img_size=self.input_size,
+            img_size=(self.input_size, self.input_size),
             preproc=TrainTransform(
                 max_labels=120,
                 flip_prob=self.flip_prob,
@@ -225,10 +225,10 @@ class Exp(BaseExp):
         tensor = torch.LongTensor(2).cuda()
 
         if rank == 0:
-            size_factor = self.input_size[1] * 1.0 / self.input_size[0]
+            size_factor = self.input_size * 1.0 / self.input_size
             if not hasattr(self, 'random_size'):
-                min_size = int(self.input_size[0] / 32) - self.multiscale_range
-                max_size = int(self.input_size[0] / 32) + self.multiscale_range
+                min_size = int(self.input_size / 32) - self.multiscale_range
+                max_size = int(self.input_size / 32) + self.multiscale_range
                 self.random_size = (min_size, max_size)
             size = random.randint(*self.random_size)
             size = (int(32 * size), 32 * int(size * size_factor))
@@ -243,8 +243,11 @@ class Exp(BaseExp):
         return input_size
 
     def preprocess(self, inputs, targets, tsize):
-        scale_y = tsize[0] / self.input_size[0]
-        scale_x = tsize[1] / self.input_size[1]
+        if not isinstance(tsize, int):
+            tsize = tsize[0]
+        
+        scale_y = tsize / self.input_size
+        scale_x = tsize / self.input_size
         if scale_x != 1 or scale_y != 1:
             inputs = nn.functional.interpolate(
                 inputs, size=tsize, mode="bilinear", align_corners=False
@@ -304,7 +307,7 @@ class Exp(BaseExp):
         return COCODataset(
             data_dir=self.data_dir,
             json_file=self.val_ann if not testdev else self.test_ann,
-            name="val2017" if not testdev else "test2017",
+            name="val" if not testdev else "test",
             img_size=self.test_size,
             preproc=ValTransform(legacy=legacy),
         )

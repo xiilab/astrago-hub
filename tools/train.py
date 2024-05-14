@@ -19,6 +19,9 @@ def make_parser():
     parser = argparse.ArgumentParser("YOLOX train parser")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
+    parser.add_argument('--data-dir', type=str, default='datasets/COCO', help='Root Foler Dir Path')
+    parser.add_argument('--imgsz', type=int, default=640, help='input image size')
+    parser.add_argument('--epoch', type=int, default=100, help="epochs to train")
 
     # distributed
     parser.add_argument(
